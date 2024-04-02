@@ -1,7 +1,14 @@
 # frozen_string_literal: true
 
 require 'os'
+require 'json'
+require 'minitest/test_task'
 
+Minitest::TestTask.create do |t|
+  t.framework = %(require "tests/test_helper.rb")
+  t.libs = %w[test .]
+  t.test_globs = ['tests/**/*_test.rb']
+end
 desc 'Fetches the given version of mruby from github, requires to be installed'
 task :fetch, [:version] do |_t, args|
   version = args[:version] || '3.3.0'
