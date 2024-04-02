@@ -18,4 +18,5 @@ gem 'yard'
 # Testing
 group :test do
   gem 'selenium-webdriver'
+  gem "minitest"
 end
