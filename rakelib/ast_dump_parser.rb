@@ -14,6 +14,29 @@ class BaseDef
   end
 end
 
+class TypeDef
+  def initialize(type_def)
+    @type_def = type_def
+  end
+
+  def to_s
+    as_str
+  end
+
+  private
+
+  attr_reader :type_def
+
+  def as_str
+    @as_str ||= begin
+      return type_def if type_def.is_a? String
+      raise "Field Definition has no type #{definition}" if type_def.nil?
+
+      type_def['qualType']
+    end
+  end
+end
+
 class StructFieldDef
   attr_reader :definition
 
@@ -37,20 +60,16 @@ class StructFieldDef
     @name ||= definition['name']
   end
 
-  def type
-    @type ||= build_type
+  def kind
+    'struct_field'
   end
 
-  def build_type
-    t = definition['type']
-    return t if t.is_a? String
-    raise "Field Definition has no type #{definition}" if t.nil?
-
-    t['qualType']
+  def type
+    @type ||= TypeDef.new(definition['type'])
   end
 
   def to_s
-    { name:, type: }.to_s
+    { name:, kind:, type: type.to_s }.to_s
   end
 end
 
@@ -103,11 +122,11 @@ class ParamDef
   end
 
   def type
-    @type ||= decl['type']['qualType']
+    @type ||= TypeDef.new(decl['type'])
   end
 
   def to_s
-    { name:, type: }.to_s
+    { name:, type: type.to_s }.to_s
   end
 
   private
