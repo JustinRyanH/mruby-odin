@@ -207,7 +207,7 @@ class FuncDef < BaseDef
   end
 
   def kind
-    'func'
+    :func
   end
 
   def id
@@ -249,11 +249,27 @@ end
 
 class GlobalTypeDef < BaseDef
   def kind
-    'global_type'
+    :global_type
   end
 
   def id
     definition['id']
+  end
+
+  def to_s
+    puts definition.keys
+    "name #{definition['name']} isReferenced: #{referenced?} inner: #{content} #{content.size}"
+  end
+
+  private
+
+  def referenced?
+    definition['isReferenced'] == true
+  end
+
+  def content
+    # TODO: I need a way to store comments
+    definition['inner'].reject { |i| i['kind'] == 'FullComment' }
   end
 end
 
@@ -267,30 +283,40 @@ class AstDumpParser
   def initialize(ast_hash)
     @ast_hash = ast_hash
     @token_map = {}
+    @kind_map = {}
   end
 
   def parse!
     definitions = @ast_hash['inner'].select { |a| api?(a) }.map { |d| parse(d) }
-    definitions.each { |d| puts d }
+    puts(kind_map[:enum].map { |e| "id:#{e.id}, n:#{e.name} keys: #{e.values.map(&:name).join(', ')}" })
+    # definitions.select { |d| d.kind == :global_type }.each { |d| puts d }
   end
+
+  private
+
+  attr_reader :ast_hash, :kind_map, :token_map
 
   def parse(decl)
     case decl['kind']
     when 'RecordDecl'
       StructDef.new(decl).tap do |s|
         @token_map[s.id] = s
+        add_to_kind_hash(s)
       end
     when 'EnumDecl'
       EnumDef.new(decl).tap do |e|
         @token_map[e.id] = e
+        add_to_kind_hash(e)
       end
     when 'FunctionDecl'
       FuncDef.new(decl).tap do |f|
         @token_map[f.id] = f
+        add_to_kind_hash(f)
       end
     when 'TypedefDecl'
       GlobalTypeDef.new(decl).tap do |g|
         @token_map[g.id] = g
+        add_to_kind_hash(g)
       end
     else
       raise "Unhandled decl: #{decl['name']}, #{decl['kind']}"
@@ -302,5 +328,10 @@ class AstDumpParser
     return true if decl['kind'] == 'EnumDecl'
 
     false
+  end
+
+  def add_to_kind_hash(ast)
+    @kind_map[ast.kind] ||= []
+    @kind_map[ast.kind] << ast
   end
 end
