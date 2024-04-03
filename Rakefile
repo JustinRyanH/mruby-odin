@@ -9,6 +9,7 @@ Minitest::TestTask.create do |t|
   t.libs = %w[test .]
   t.test_globs = ['tests/**/*_test.rb']
 end
+
 desc 'Fetches the given version of mruby from github, requires to be installed'
 task :fetch, [:version] do |_t, args|
   version = args[:version] || '3.3.0'
@@ -21,9 +22,9 @@ task :fetch, [:version] do |_t, args|
   end
 end
 
-namespace :build do
+namespace :mac do
   desc 'Builds the macos version using clang'
-  task compile_mac: [] do
+  task build: [:fetch] do
     FileUtils.mkdir_p('./libs/macos')
 
     full_path = File.expand_path('./config/macos.rb')
@@ -41,5 +42,12 @@ namespace :build do
     else
       puts "Error: Build Directory did not get generated #{build_dir_path}"
     end
+  end
+
+  task gen: [] do
+    cmd = "clang -Xclang -ast-dump=json -c -I build/mruby/build/host/include/ c/mruby.c"
+    result = `#{cmd}`
+    as_json = JSON.parse(result)
+    puts as_json.keys
   end
 end
