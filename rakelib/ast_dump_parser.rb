@@ -254,6 +254,35 @@ class FuncDef < BaseDef
   end
 end
 
+class TagOwner < BaseDef
+  def kind
+    :owner_tag
+  end
+
+  def id
+    @id ||= definition['id']
+  end
+
+  def name
+    @name ||= definition['name']
+  end
+
+  def target_kind
+    @target_kind ||= case definition['kind']
+                     when 'EnumDecl'
+                       :enum
+                     when 'RecordDecl'
+                       :struct
+                     else
+                       raise "#{definition['kind']} unhandled"
+                     end
+  end
+
+  def to_s
+    { id:, kind:, name:, target_kind: }.to_s
+  end
+end
+
 class GlobalTypeDef < BaseDef
   def kind
     :global_type
@@ -265,14 +294,32 @@ class GlobalTypeDef < BaseDef
 
   def to_s
     puts definition.keys
-    "name #{definition['name']} isReferenced: #{referenced?} inner: #{content} #{content.size}"
+    "name #{definition['name']} isReferenced: #{referenced?} type: #{content_type} owner: #{target_type}"
   end
 
   def referenced?
     @referenced ||= definition['isReferenced'] == true
   end
 
+  def content_type
+    content_solo['kind']
+  end
+
+  def owner
+    @owner ||= TagOwner.new(content_solo['ownedTagDecl'])
+  end
+
+  def target_type
+    owner.target_kind
+  end
+
   private
+
+  def content_solo
+    raise 'GlobalDef should have only one instance of content' if content.size > 1
+
+    content.first
+  end
 
   def content
     # TODO: I need a way to store comments
@@ -297,7 +344,7 @@ class AstDumpParser
   def parse!
     @ordered_ast = @ast_hash['inner'].select { |a| api?(a) }.each { |d| parse(d) }
     puts(kind_map[:enum].map { |e| "id:#{e.id}, n:#{e.name} keys: #{e.values.map(&:name).join(', ')}" })
-    kind_map[:global_type].select(&:referenced?).each { |g| puts g }
+    kind_map[:global_type].select { |g| g.content_type == 'ElaboratedType' }.each { |g| puts g }
   end
 
   private
