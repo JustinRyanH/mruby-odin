@@ -101,10 +101,11 @@ class StructDef < BaseDef
 end
 
 class EnumDef < BaseDef
-  attr_reader :name
+  attr_reader :name, :values
 
   def parse
     @name = definition['name']
+    @values ||= []
     self
   end
 
@@ -189,6 +190,10 @@ class FuncDef < BaseDef
   end
 end
 
+class GlobalTypeDef < BaseDef
+end
+
+# TODO: Ignore MacPortGuardException
 class AstDumpParser
   # @param [String] dump - the raw output from `clang -ast-dump=json`
   def self.from_clang_dump(dump)
@@ -202,7 +207,7 @@ class AstDumpParser
   def parse!
     definitions = @ast_hash['inner'].select { |a| api?(a) }.map { |d| parse(d) }
     definitions.each do |d|
-      puts d
+      # puts d
     end
   end
 
@@ -211,9 +216,15 @@ class AstDumpParser
     when 'RecordDecl'
       StructDef.new(decl).parse
     when 'EnumDecl'
-      EnumDef.new(decl).parse
+      e = EnumDef.new(decl).parse
+      puts e
+      e
     when 'FunctionDecl'
       FuncDef.new(decl).parse
+    when 'TypedefDecl'
+      GlobalTypeDef.new(decl).parse
+    else
+      raise "Unhandled decl: #{decl['name']}, #{decl['kind']}"
     end
   end
 
