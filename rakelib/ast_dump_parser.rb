@@ -106,6 +106,7 @@ class EnumEntry
 
   def initialize(definition)
     @definition = definition
+    @typedef = nil
   end
 
   def name
@@ -118,6 +119,12 @@ class EnumEntry
 
   def value
     @value ||= query_set_value
+  end
+
+  def add_typedef(typedef)
+    return unless @name.nil?
+
+    @name = typedef.name
   end
 
   def to_s
@@ -261,11 +268,11 @@ class GlobalTypeDef < BaseDef
     "name #{definition['name']} isReferenced: #{referenced?} inner: #{content} #{content.size}"
   end
 
-  private
-
   def referenced?
-    definition['isReferenced'] == true
+    @referenced ||= definition['isReferenced'] == true
   end
+
+  private
 
   def content
     # TODO: I need a way to store comments
@@ -284,12 +291,13 @@ class AstDumpParser
     @ast_hash = ast_hash
     @token_map = {}
     @kind_map = {}
+    @ordered_ast = []
   end
 
   def parse!
-    definitions = @ast_hash['inner'].select { |a| api?(a) }.map { |d| parse(d) }
+    @ordered_ast = @ast_hash['inner'].select { |a| api?(a) }.each { |d| parse(d) }
     puts(kind_map[:enum].map { |e| "id:#{e.id}, n:#{e.name} keys: #{e.values.map(&:name).join(', ')}" })
-    # definitions.select { |d| d.kind == :global_type }.each { |d| puts d }
+    kind_map[:global_type].select(&:referenced?).each { |g| puts g }
   end
 
   private
