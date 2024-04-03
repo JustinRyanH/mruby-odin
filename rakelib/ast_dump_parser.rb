@@ -61,7 +61,7 @@ class StructFieldDef
   end
 
   def kind
-    'struct_field'
+    :struct_field
   end
 
   def type
@@ -82,7 +82,7 @@ class StructDef < BaseDef
   end
 
   def kind
-    'struct'
+    :struct
   end
 
   def fields
@@ -101,6 +101,20 @@ class StructDef < BaseDef
 end
 
 class EnumDef < BaseDef
+  attr_reader :name
+
+  def parse
+    @name = definition['name']
+    self
+  end
+
+  def kind
+    :enum
+  end
+
+  def to_s
+    { name:, kind: }.to_s
+  end
 end
 
 class ParamDef
