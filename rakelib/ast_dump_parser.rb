@@ -8,10 +8,6 @@ class BaseDef
   def initialize(definition)
     @definition = definition
   end
-
-  def parse
-    self
-  end
 end
 
 class TypeDef
@@ -30,7 +26,7 @@ class TypeDef
   def as_str
     @as_str ||= begin
       return type_def if type_def.is_a? String
-      raise "Field Definition has no type #{definition}" if type_def.nil?
+      return '' if type_def.nil?
 
       type_def['qualType']
     end
@@ -56,6 +52,10 @@ class StructFieldDef
     @definition = definition
   end
 
+  def id
+    @id ||= definition['id']
+  end
+
   def name
     @name ||= definition['name']
   end
@@ -69,20 +69,21 @@ class StructFieldDef
   end
 
   def to_s
-    { name:, kind:, type: type.to_s }.to_s
+    { id:, name:, kind:, type: type.to_s }.to_s
   end
 end
 
 class StructDef < BaseDef
-  attr_reader :name
-
-  def parse
-    @name = definition['name']
-    self
+  def name
+    @name ||= definition['name']
   end
 
   def kind
     :struct
+  end
+
+  def id
+    @id ||= definition['id']
   end
 
   def fields
@@ -96,25 +97,68 @@ class StructDef < BaseDef
   end
 
   def to_s
-    { name:, kind:, fields: "[#{fields.map(&:to_s).join(', ')}]" }.to_s
+    { id:, name:, kind:, fields: "[#{fields.map(&:to_s).join(', ')}]" }.to_s
+  end
+end
+
+class EnumEntry
+  attr_reader :definition
+
+  def initialize(definition)
+    @definition = definition
+  end
+
+  def name
+    @name ||= definition['name']
+  end
+
+  def type
+    @type = TypeDef.new(definition['type'])
+  end
+
+  def value
+    @value ||= query_set_value
+  end
+
+  def to_s
+    { name:, type: type.to_s, value: }.to_s
+  end
+
+  private
+
+  def query_set_value
+    return nil unless definition.key?('inner')
+    raise 'Enum should not have more than one value' unless definition['inner'].size == 1
+
+    set_value = definition['inner'].first
+    raise 'Set Value should have a set value' unless set_value.key?('inner')
+    raise 'Enum should not have more than one value' unless set_value['inner'].size == 1
+
+    set_value['inner'].first['value']
   end
 end
 
 class EnumDef < BaseDef
-  attr_reader :name, :values
-
-  def parse
-    @name = definition['name']
-    @values ||= []
-    self
+  def id
+    @id ||= definition['id']
   end
 
   def kind
     :enum
   end
 
+  def name
+    @name ||= definition['name']
+  end
+
+  def values
+    @values ||= [].tap do |v|
+      definition['inner'].each { |i| v << EnumEntry.new(i) }
+    end
+  end
+
   def to_s
-    { name:, kind: }.to_s
+    { id:, name:, kind:, values: "[#{values.map(&:to_s).join(', ')}]" }.to_s
   end
 end
 
@@ -132,6 +176,10 @@ class ParamDef
     @decl = decl
   end
 
+  def id
+    @id ||= decl['id']
+  end
+
   def name
     decl['name']
   end
@@ -141,7 +189,7 @@ class ParamDef
   end
 
   def to_s
-    { name:, type: type.to_s }.to_s
+    { id:, name:, type: type.to_s }.to_s
   end
 
   private
@@ -150,18 +198,25 @@ class ParamDef
 end
 
 class FuncDef < BaseDef
-  attr_reader :name, :kind, :params
+  def params
+    @params ||= load_params.compact
+  end
 
-  def parse
-    @name = definition['name']
-    @kind = 'func'
-    @params ||= []
-    load_params!
-    self
+  def name
+    @name ||= definition['name']
+  end
+
+  def kind
+    'func'
+  end
+
+  def id
+    @id ||= definition['id']
   end
 
   def to_s
     {
+      id:,
       name:,
       kind:,
       params: "[#{params.map(&:to_s).join(', ')}]"
@@ -170,27 +225,36 @@ class FuncDef < BaseDef
 
   private
 
-  def load_params!
+  def load_params
     values = definition['inner']
-    return unless values
+    return [] unless values
 
-    values.each do |v|
-      ## TODO: investigate each of these
-      next if v['kind'] == 'CompoundStmt'
-      next if v['kind'] == 'FullComment'
-      next if v['kind'] == 'C11NoReturnAttr'
+    values.map { |v| parse_param_value(v) }
+  end
 
-      unless ParamDef.valid_param?(v)
-        puts "\nParam(#{v['name'] || v['kind']}) was ignored\n"
-        next
-      end
+  def parse_param_value(param_value)
+    ## TODO: investigate each of these
+    return nil if param_value['kind'] == 'CompoundStmt'
+    return nil if param_value['kind'] == 'FullComment'
+    return nil if param_value['kind'] == 'C11NoReturnAttr'
 
-      @params << ParamDef.from_decl(v)
+    unless ParamDef.valid_param?(param_value)
+      puts "\nParam(#{param_value['name'] || param_value['kind']}) was ignored\n"
+      return nil
     end
+
+    ParamDef.from_decl(param_value)
   end
 end
 
 class GlobalTypeDef < BaseDef
+  def kind
+    'global_type'
+  end
+
+  def id
+    definition['id']
+  end
 end
 
 # TODO: Ignore MacPortGuardException
@@ -202,27 +266,32 @@ class AstDumpParser
 
   def initialize(ast_hash)
     @ast_hash = ast_hash
+    @token_map = {}
   end
 
   def parse!
     definitions = @ast_hash['inner'].select { |a| api?(a) }.map { |d| parse(d) }
-    definitions.each do |d|
-      # puts d
-    end
+    definitions.each { |d| puts d }
   end
 
   def parse(decl)
     case decl['kind']
     when 'RecordDecl'
-      StructDef.new(decl).parse
+      StructDef.new(decl).tap do |s|
+        @token_map[s.id] = s
+      end
     when 'EnumDecl'
-      e = EnumDef.new(decl).parse
-      puts e
-      e
+      EnumDef.new(decl).tap do |e|
+        @token_map[e.id] = e
+      end
     when 'FunctionDecl'
-      FuncDef.new(decl).parse
+      FuncDef.new(decl).tap do |f|
+        @token_map[f.id] = f
+      end
     when 'TypedefDecl'
-      GlobalTypeDef.new(decl).parse
+      GlobalTypeDef.new(decl).tap do |g|
+        @token_map[g.id] = g
+      end
     else
       raise "Unhandled decl: #{decl['name']}, #{decl['kind']}"
     end
