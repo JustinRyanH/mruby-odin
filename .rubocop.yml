@@ -15,3 +15,6 @@ Style/RedundantFileExtensionInRequire:
 
 Style/Documentation:
   Enabled: false
+
+Metrics/AbcSize:
+  Max: 500
