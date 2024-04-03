@@ -1,0 +1,17 @@
+AllCops:
+  TargetRubyVersion: 3.3
+
+Style/Encoding:
+  Enabled: false
+
+Metrics/BlockLength:
+  Max: 500
+
+Metrics/MethodLength:
+  Max: 500
+
+Style/RedundantFileExtensionInRequire:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
