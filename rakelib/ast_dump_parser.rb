@@ -126,6 +126,7 @@ class StructDef < BaseDef
 
   def add_typedef(typedef)
     @typedef = typedef
+    @name = typedef.name if @name.nil?
   end
 
   def to_s
@@ -321,11 +322,11 @@ class GlobalTypeDef < BaseDef
   end
 
   def id
-    definition['id']
+    @id ||= definition['id']
   end
 
   def name
-    definition['name']
+    @name ||= definition['name']
   end
 
   def to_s
