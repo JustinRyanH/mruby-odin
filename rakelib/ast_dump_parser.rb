@@ -96,6 +96,10 @@ class StructDef < BaseDef
     end
   end
 
+  def add_typedef(typedef)
+    @typedef = typedef
+  end
+
   def to_s
     { id:, name:, kind:, fields: "[#{fields.map(&:to_s).join(', ')}]" }.to_s
   end
@@ -119,12 +123,6 @@ class EnumEntry
 
   def value
     @value ||= query_set_value
-  end
-
-  def add_typedef(typedef)
-    return unless @name.nil?
-
-    @name = typedef.name
   end
 
   def to_s
@@ -156,6 +154,11 @@ class EnumDef < BaseDef
 
   def name
     @name ||= definition['name']
+  end
+
+  def add_typedef(typedef)
+    @typedef = typedef
+    @name = typedef.name if @name.nil?
   end
 
   def values
@@ -283,6 +286,7 @@ class TagOwner < BaseDef
   end
 end
 
+# TODO: Handle Aliases, Function Typedef
 class GlobalTypeDef < BaseDef
   def kind
     :global_type
@@ -292,9 +296,18 @@ class GlobalTypeDef < BaseDef
     definition['id']
   end
 
+  def name
+    definition['name']
+  end
+
   def to_s
-    puts definition.keys
-    "name #{definition['name']} isReferenced: #{referenced?} type: #{content_type} owner: #{target_type}"
+    {
+      id:,
+      kind:,
+      content_type:,
+      is_referenced: referenced?,
+      owner: owner.to_s
+    }.to_s
   end
 
   def referenced?
@@ -302,15 +315,33 @@ class GlobalTypeDef < BaseDef
   end
 
   def content_type
-    content_solo['kind']
+    case content_solo['kind']
+    when 'ElaboratedType'
+      :elaborated
+    when 'PointerType'
+      :pointer
+    when 'TypedefType'
+      :typedef
+    when 'BuiltinType'
+      :builtin
+    when 'ParenType'
+      :paren
+    when 'RecordType'
+      :record
+    when 'ConstantArrayType'
+      :array
+    else
+      puts content_solo
+      raise "Unhandled Typedef #{content_solo['kind']}"
+    end
   end
 
   def owner
-    @owner ||= TagOwner.new(content_solo['ownedTagDecl'])
+    @owner ||= content_solo.key?('ownedTagDecl') ? TagOwner.new(content_solo['ownedTagDecl']) : nil
   end
 
   def target_type
-    owner.target_kind
+    owner&.target_kind
   end
 
   private
@@ -342,9 +373,17 @@ class AstDumpParser
   end
 
   def parse!
-    @ordered_ast = @ast_hash['inner'].select { |a| api?(a) }.each { |d| parse(d) }
-    puts(kind_map[:enum].map { |e| "id:#{e.id}, n:#{e.name} keys: #{e.values.map(&:name).join(', ')}" })
-    kind_map[:global_type].select { |g| g.content_type == 'ElaboratedType' }.each { |g| puts g }
+    @ordered_ast = @ast_hash['inner'].each { |d| parse(d) }
+    kind_map[:global_type]
+      .select { |g| g.content_type == :elaborated }
+      .select { |g| g.owner }
+      .each do |g|
+        target_id = g.owner.id
+
+        owner = @token_map[target_id]
+        puts "Owner(#{target_id}) name(#{g.name})" if owner.nil?
+        owner.add_typedef(g)
+      end
   end
 
   private
@@ -357,22 +396,29 @@ class AstDumpParser
       StructDef.new(decl).tap do |s|
         @token_map[s.id] = s
         add_to_kind_hash(s)
+        @ordered_ast << s
       end
     when 'EnumDecl'
       EnumDef.new(decl).tap do |e|
         @token_map[e.id] = e
         add_to_kind_hash(e)
+        @ordered_ast << e
       end
     when 'FunctionDecl'
       FuncDef.new(decl).tap do |f|
         @token_map[f.id] = f
         add_to_kind_hash(f)
+        @ordered_ast << f
       end
     when 'TypedefDecl'
       GlobalTypeDef.new(decl).tap do |g|
         @token_map[g.id] = g
         add_to_kind_hash(g)
+        @ordered_ast << g
       end
+    when 'VarDecl', 'StaticAssertDecl'
+      # I don't forsee myself needing this decl
+      nil
     else
       raise "Unhandled decl: #{decl['name']}, #{decl['kind']}"
     end
