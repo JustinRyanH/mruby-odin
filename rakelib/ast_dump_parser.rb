@@ -2,11 +2,39 @@
 
 require 'json'
 
+class AstLocation
+  attr_reader :loc
+
+  def initialize(location)
+    @loc = location
+  end
+
+  def line
+    @line ||= loc['line']
+  end
+
+  def column
+    @column ||= loc['col']
+  end
+
+  def file
+    @file ||= loc.dig('includedFrom', 'file')
+  end
+
+  def to_s
+    { line:, column:, file: }.to_s
+  end
+end
+
 class BaseDef
   attr_reader :definition
 
   def initialize(definition)
     @definition = definition
+  end
+
+  def location
+    @location ||= AstLocation.new(definition['loc'])
   end
 end
 
@@ -374,13 +402,14 @@ class AstDumpParser
   end
 
   def parse!
-    @ordered_ast = @ast_hash['inner'].each { |d| parse(d) }
+    @ast_hash['inner'].each { |d| parse(d) }
 
     attach_types
+    cleanup_external_tokens
   end
 
   def find_struct(name)
-    kind_map[:struct].reject { |s| s.name == name }
+    kind_map[:struct].find { |s| s.name == name }
   end
 
   private
@@ -429,6 +458,15 @@ class AstDumpParser
         owner = @token_map[target_id]
         owner.add_typedef(g)
       end
+  end
+
+  def cleanup_external_tokens
+    to_delete = @ordered_ast.reject { |ast| ast.location&.file&.include?('mruby') }
+    to_delete.each do |node|
+      @token_map.delete(node.id)
+      @kind_map[node.kind].reject! { |k| k.id == node.id }
+      @ordered_ast.reject! { |o| o.id == node.id }
+    end
   end
 
   def add_to_kind_hash(ast)
