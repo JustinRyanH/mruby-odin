@@ -359,6 +359,8 @@ class GlobalTypeDef < BaseDef
 end
 
 class AstDumpParser
+  attr_reader :ast_hash, :kind_map, :token_map
+
   # @param [String] dump - the raw output from `clang -ast-dump=json`
   def self.from_clang_dump(dump)
     new(JSON.parse(dump))
@@ -377,9 +379,11 @@ class AstDumpParser
     fix_unruly_behavior
   end
 
-  private
+  def find_struct(name)
+    kind_map[:struct].find { |s| s.name == name }
+  end
 
-  attr_reader :ast_hash, :kind_map, :token_map
+  private
 
   def parse(decl)
     case decl['kind']
