@@ -387,7 +387,7 @@ class GlobalTypeDef < BaseDef
 end
 
 class AstDumpParser
-  attr_reader :ast_hash, :kind_map, :token_map
+  attr_reader :ast_hash, :kind_map, :token_map, :ordered_ast
 
   # @param [String] dump - the raw output from `clang -ast-dump=json`
   def self.from_clang_dump(dump)
