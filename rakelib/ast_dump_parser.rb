@@ -358,7 +358,6 @@ class GlobalTypeDef < BaseDef
   end
 end
 
-# TODO: Ignore MacPortGuardException
 class AstDumpParser
   # @param [String] dump - the raw output from `clang -ast-dump=json`
   def self.from_clang_dump(dump)
