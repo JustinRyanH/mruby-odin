@@ -18,3 +18,6 @@ Style/Documentation:
 
 Metrics/AbcSize:
   Max: 500
+
+Metrics/CyclomaticComplexity:
+  Max: 50
