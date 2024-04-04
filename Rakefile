@@ -31,21 +31,21 @@ namespace :mac do
     Dir.chdir('./build/mruby') do
       sh "rake MRUBY_CONFIG=#{full_path}"
     end
-    
+
     build_dir_path = File.expand_path('./build/mruby/build/host/lib/')
 
     if Dir.exist?(build_dir_path)
       library_files = Dir.entries(build_dir_path)
-        .select { |f| f.include?('.a')}
-        .map { |f| Pathname.new(build_dir_path).join(f) }
-        .each { |f| FileUtils.cp(f, 'libs/macos/')}
+                         .select { |f| f.include?('.a') }
+                         .map { |f| Pathname.new(build_dir_path).join(f) }
+                         .each { |f| FileUtils.cp(f, 'libs/macos/') }
     else
       puts "Error: Build Directory did not get generated #{build_dir_path}"
     end
   end
 
   task gen: [] do
-    cmd = "clang -Xclang -ast-dump=json -c -I build/mruby/build/host/include/ c/mruby.c"
+    cmd = 'clang -Xclang -ast-dump=json -c -I build/mruby/build/host/include/ c/mruby.c'
     result = `#{cmd}`
     as_json = JSON.parse(result)
     puts as_json.keys
