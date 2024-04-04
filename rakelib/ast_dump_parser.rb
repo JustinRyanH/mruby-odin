@@ -374,16 +374,8 @@ class AstDumpParser
 
   def parse!
     @ordered_ast = @ast_hash['inner'].each { |d| parse(d) }
-    kind_map[:global_type]
-      .select { |g| g.content_type == :elaborated }
-      .select { |g| g.owner }
-      .each do |g|
-        target_id = g.owner.id
 
-        owner = @token_map[target_id]
-        puts "Owner(#{target_id}) name(#{g.name})" if owner.nil?
-        owner.add_typedef(g)
-      end
+    fix_unruly_behavior
   end
 
   private
@@ -424,11 +416,16 @@ class AstDumpParser
     end
   end
 
-  def api?(decl)
-    return true if decl['name']&.include?('mrb')
-    return true if decl['kind'] == 'EnumDecl'
+  def fix_unruly_behavior
+    kind_map[:global_type]
+      .select { |g| g.content_type == :elaborated }
+      .select(&:owner)
+      .each do |g|
+        target_id = g.owner.id
 
-    false
+        owner = @token_map[target_id]
+        owner.add_typedef(g)
+      end
   end
 
   def add_to_kind_hash(ast)
