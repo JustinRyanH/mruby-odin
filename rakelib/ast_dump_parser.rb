@@ -376,11 +376,11 @@ class AstDumpParser
   def parse!
     @ordered_ast = @ast_hash['inner'].each { |d| parse(d) }
 
-    fix_unruly_behavior
+    attach_types
   end
 
   def find_struct(name)
-    kind_map[:struct].find { |s| s.name == name }
+    kind_map[:struct].reject { |s| s.name == name }
   end
 
   private
@@ -419,7 +419,7 @@ class AstDumpParser
     end
   end
 
-  def fix_unruly_behavior
+  def attach_types
     kind_map[:global_type]
       .select { |g| g.content_type == :elaborated }
       .select(&:owner)
