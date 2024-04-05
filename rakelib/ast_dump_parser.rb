@@ -435,7 +435,8 @@ class AstDumpParser
   end
 
   def find_struct(name)
-    kind_map[:struct].find { |s| s.name == name }
+    node = @name_to_node[name]
+    node if node.kind == :struct
   end
 
   private

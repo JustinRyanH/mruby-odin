@@ -17,7 +17,6 @@ class TestAstDumpParser < Minitest::Test
   end
 
   def test_mrb_state
-    skip('Skip till we finish de-duplicating tokens')
     file = File.open('tests/main_c_dump.json')
     parser = ::AstDumpParser.from_clang_dump(file.read)
 
