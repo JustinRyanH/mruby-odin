@@ -15,7 +15,7 @@ class TestOdinProducor < Minitest::Test
     expected = <<~EXP
       test_struct :: struct {
         field_a: c.int,
-        field_: bool,
+        field_b: bool,
       }
     EXP
 
