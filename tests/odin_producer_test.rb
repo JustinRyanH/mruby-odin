@@ -18,6 +18,7 @@ class TestOdinProducor < Minitest::Test
         field_b: bool,
         field_c: ^f32,
         field_d: rawptr,
+        field_e: ^f32,
       }
     EXP
 
@@ -46,6 +47,7 @@ class TestOdinProducor < Minitest::Test
         field_b: bool,
         field_c: ^f32,
         field_d: rawptr,
+        field_e: ^f32,
       }
 
     EXP

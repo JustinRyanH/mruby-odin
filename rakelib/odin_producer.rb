@@ -40,6 +40,8 @@ PRIMITIVE_DEFAULTS = {
   'size_t' => '0',
 }.freeze
 
+IDENTIFIER_TO_REMOVE = %w[const struct]
+
 class OdinField
   attr_reader :node
 
@@ -61,9 +63,15 @@ class OdinField
     node_type = node.type
     return 'rawptr' if node_type.ptr? && node_type.without_ptr == 'void'
 
-    odin_type = PRIMITIVE_TYPES[node_type.without_ptr] || node_type.without_ptr
+    cleaned_type = clear_c_specific_references(node_type.without_ptr)
+    odin_type = PRIMITIVE_TYPES[cleaned_type] || cleaned_type
     odin_type = "^#{odin_type}" if node_type.ptr?
     odin_type
+  end
+
+  def clear_c_specific_references(type)
+    IDENTIFIER_TO_REMOVE.each { |itr| type = type.gsub(itr, '') }
+    type.strip
   end
 end
 
