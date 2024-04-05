@@ -29,12 +29,32 @@ end
 class BaseDef
   attr_reader :definition
 
+  def kind
+    raise 'Kind was not implemented'
+  end
+
   def initialize(definition)
     @definition = definition
   end
 
   def location
     @location ||= AstLocation.new(definition['loc'])
+  end
+
+  def struct?
+    kind == :struct
+  end
+
+  def func?
+    kind == :func
+  end
+
+  def enum?
+    kind == :enum
+  end
+
+  def global_typedef?
+    kind == :global_type
   end
 end
 
@@ -407,6 +427,7 @@ class AstDumpParser
 
     attach_types
     cleanup_external_tokens
+    cleanup_duplicates
   end
 
   def find_struct(name)
@@ -462,16 +483,53 @@ class AstDumpParser
   end
 
   def cleanup_external_tokens
-    to_delete = @ordered_ast.reject { |ast| ast.location&.file&.include?('mruby') }
-    to_delete.each do |node|
-      @token_map.delete(node.id)
-      @kind_map[node.kind].reject! { |k| k.id == node.id }
-      @ordered_ast.reject! { |o| o.id == node.id }
+    @ordered_ast
+      .reject { |ast| ast.location&.file&.include?('mruby') }
+      .each { |node| remove_node node }
+  end
+
+  def cleanup_duplicates
+    duplicates ||= {}
+    @ordered_ast.select { |ast| ast.name.include?('mrb') }.each do |ast|
+      duplicates[ast.name] ||= []
+      duplicates[ast.name] << ast
+    end
+    duplicates.select! { |_, v| v.size > 1 }
+    duplicates.each_value do |nodes|
+      nodes.select(&:global_typedef?).each { |node| remove_node(node) }
+      nodes.reject!(&:global_typedef?)
+      next if nodes.size == 1
+
+      node_types = nodes.map(&:kind).uniq
+
+      # clang should not let the AST get generated if this happens somehow,
+      # but I wont to know if it does
+      raise 'Not all of the nodes are the same type ' if node_types.size > 1
+
+      node_type = node_types.first
+      case node_type
+      when :struct
+        are_all_empty = nodes.all? { |n| n.fields.empty? }
+        if are_all_empty
+          nodes[1..].each { |n| remove_node(n) }
+        else
+          nodes.select { |n| n.fields.empty? }.each { |n| remove_node(n) }
+        end
+
+      else
+        raise "#{note_type} has not been handled for duplicate handling"
+      end
     end
   end
 
   def add_to_kind_hash(ast)
     @kind_map[ast.kind] ||= []
     @kind_map[ast.kind] << ast
+  end
+
+  def remove_node(node)
+    @token_map.delete(node.id)
+    @kind_map[node.kind].reject! { |k| k.id == node.id }
+    @ordered_ast.reject! { |o| o.id == node.id }
   end
 end
