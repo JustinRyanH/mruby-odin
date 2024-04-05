@@ -12,11 +12,13 @@ class TestOdinProducor < Minitest::Test
     struct_node = parser.find_struct('test_struct')
     out = OdinProducter.output_struct(struct_node)
 
-    assert_equal(<<-RESULT, out)
-    test_struct :: struct {
-      field_a: c.int,
-      field_b: bool,
-    }
-    RESULT
+    expected = <<~EXP
+      test_struct :: struct {
+        field_a: c.int,
+        field_: bool,
+      }
+    EXP
+
+    assert_equal(expected, out)
   end
 end

@@ -1,0 +1,5 @@
+<%= @struct_name %> :: struct {
+<% @fields.each do |field| -%>
+  <%= field.name %>: <%= field.type %>,
+<% end -%>
+}
