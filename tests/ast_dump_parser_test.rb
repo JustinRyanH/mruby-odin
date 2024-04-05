@@ -35,5 +35,8 @@ class TestAstDumpParser < Minitest::Test
     struct_node = parser.find_struct('test_struct')
 
     refute_nil struct_node
+    refute_nil struct_node['field_a']
+    refute_nil struct_node['field_b']
+    refute_nil struct_node['field_c']
   end
 end

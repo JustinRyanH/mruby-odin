@@ -149,13 +149,10 @@ class StructDef < BaseDef
   end
 
   def fields
-    @fields ||= [].tap do |f|
-      definition.fetch('inner', []).each do |maybe_field|
-        next unless StructFieldDef.valid_field?(maybe_field)
+    return @fields unless @fields.nil?
 
-        f << StructFieldDef.from_decl(maybe_field)
-      end
-    end
+    build_fields
+    @fields
   end
 
   def add_typedef(typedef)
@@ -163,8 +160,29 @@ class StructDef < BaseDef
     @name = typedef.name if @name.nil?
   end
 
+  def [](field_name)
+    @field_name_map[field_name] unless @field_name_map.nil?
+
+    build_fields
+    @field_name_map[field_name]
+  end
+
   def to_s
     { id:, name:, kind:, fields: "[#{fields.map(&:to_s).join(', ')}]" }.to_s
+  end
+
+  private
+
+  def build_fields
+    @fields ||= []
+    @field_name_map ||= {}
+    definition.fetch('inner', []).each do |maybe_field|
+      next unless StructFieldDef.valid_field?(maybe_field)
+
+      struct_field = StructFieldDef.from_decl(maybe_field)
+      @fields << struct_field
+      @field_name_map[struct_field.name] = struct_field
+    end
   end
 end
 
