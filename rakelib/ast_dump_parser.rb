@@ -489,12 +489,7 @@ class AstDumpParser
   end
 
   def cleanup_duplicates
-    duplicates ||= {}
-    @ordered_ast.select { |ast| ast.name.include?('mrb') }.each do |ast|
-      duplicates[ast.name] ||= []
-      duplicates[ast.name] << ast
-    end
-    duplicates.select! { |_, v| v.size > 1 }
+    duplicates = duplicate_api_nodes
     duplicates.each_value do |nodes|
       nodes.select(&:global_typedef?).each { |node| remove_node(node) }
       nodes.reject!(&:global_typedef?)
@@ -531,5 +526,19 @@ class AstDumpParser
     @token_map.delete(node.id)
     @kind_map[node.kind].reject! { |k| k.id == node.id }
     @ordered_ast.reject! { |o| o.id == node.id }
+  end
+
+  def duplicate_api_nodes
+    @duplicate_api_nodes ||= {}.tap do |duplicates|
+      api_nodes.each do |ast|
+        duplicates[ast.name] ||= []
+        duplicates[ast.name] << ast
+        duplicates.select! { |_, v| v.size > 1 }
+      end
+    end
+  end
+
+  def api_nodes
+    @api_nodes ||= @ordered_ast.select { |ast| ast.name.include?('mrb') }
   end
 end
