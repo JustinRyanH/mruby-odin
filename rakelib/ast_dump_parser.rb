@@ -18,11 +18,23 @@ class AstLocation
   end
 
   def file
-    @file ||= loc.dig('includedFrom', 'file')
+    @file ||= find_file
+  end
+
+  def empty?
+    @loc.empty?
   end
 
   def to_s
     { line:, column:, file: }.to_s
+  end
+
+  private
+
+  def find_file
+    return loc['file'] if loc.key?('file')
+
+    loc.dig('includedFrom', 'file') || ''
   end
 end
 
@@ -353,6 +365,7 @@ class GlobalTypeDef < BaseDef
     {
       id:,
       kind:,
+      name:,
       content_type:,
       is_referenced: referenced?,
       owner: owner.to_s
@@ -408,18 +421,21 @@ class GlobalTypeDef < BaseDef
 end
 
 class AstDumpParser
-  attr_reader :ast_hash, :kind_map, :token_map, :ordered_ast
+  attr_reader :ast_hash, :kind_map, :token_map, :ordered_ast, :name_to_node
 
   # @param [String] dump - the raw output from `clang -ast-dump=json`
-  def self.from_clang_dump(dump)
-    new(JSON.parse(dump))
+  def self.from_clang_dump(dump, api_id: 'mrb', file_search_paths: ['ruby'])
+    new(JSON.parse(dump), api_id:, file_search_paths:)
   end
 
-  def initialize(ast_hash)
+  def initialize(ast_hash, api_id: 'mrb', file_search_paths: ['ruby'])
     @ast_hash = ast_hash
+    @file_search_paths = file_search_paths
+    @api_id = api_id
     @token_map = {}
     @kind_map = {}
     @ordered_ast = []
+    @name_to_node = {}
   end
 
   def parse!
@@ -432,11 +448,13 @@ class AstDumpParser
     @name_to_node = api_nodes.each_with_object({}) do |node, obj|
       obj[node.name] = node
     end
+
+    self
   end
 
   def find_struct(name)
     node = @name_to_node[name]
-    node if node.kind == :struct
+    node if node&.kind == :struct
   end
 
   private
@@ -489,7 +507,7 @@ class AstDumpParser
 
   def cleanup_external_tokens
     @ordered_ast
-      .reject { |ast| ast.location&.file&.include?('mruby') }
+      .reject { |ast| file_in_accepted_path(ast.location) }
       .each { |node| remove_node node }
   end
 
@@ -546,6 +564,14 @@ class AstDumpParser
   end
 
   def api_nodes
-    @ordered_ast.select { |ast| ast.name.include?('mrb') }
+    @ordered_ast
+      .select(&:name)
+      .select { |ast| ast.name.include?(@api_id) }
+  end
+
+  def file_in_accepted_path(location)
+    return false if location.empty?
+
+    @file_search_paths.any? { |p| location.file.include?(p) }
   end
 end

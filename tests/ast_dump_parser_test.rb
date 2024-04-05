@@ -26,4 +26,14 @@ class TestAstDumpParser < Minitest::Test
     refute_nil struct
     refute_empty struct.fields
   end
+
+  def test_basic_struct
+    struct_example = IO.read('tests/struct_example.json')
+    parser = AstDumpParser.from_clang_dump(struct_example, api_id: 'test', file_search_paths: ['tests'])
+    parser.parse!
+
+    struct_node = parser.find_struct('test_struct')
+
+    refute_nil struct_node
+  end
 end
