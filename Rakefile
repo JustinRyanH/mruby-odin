@@ -4,6 +4,9 @@ require 'os'
 require 'json'
 require 'minitest/test_task'
 
+require_relative './rakelib/ast_dump_parser'
+require_relative './rakelib/odin_producer'
+
 Minitest::TestTask.create do |t|
   t.framework = %(require "tests/test_helper.rb")
   t.libs = %w[test .]
@@ -44,10 +47,18 @@ namespace :mac do
     end
   end
 
+  desc 'Generates .odin files related to the headers of mruby'
   task gen: [] do
     cmd = 'clang -Xclang -ast-dump=json -c -I build/mruby/build/host/include/ c/mruby.c'
     result = `#{cmd}`
-    as_json = JSON.parse(result)
-    puts as_json.keys
+    raise 'Result not created' if result.nil? || result.empty?
+
+    parser = AstDumpParser.from_clang_dump(result)
+    parser.parse!
+
+    producer = OdinProducter.new(parser)
+    producer.setup!
+
+    puts producer
   end
 end
