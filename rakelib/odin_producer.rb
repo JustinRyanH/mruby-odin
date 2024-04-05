@@ -59,6 +59,8 @@ class OdinField
 
   def build_type
     node_type = node.type
+    return 'rawptr' if node_type.ptr? && node_type.without_ptr == 'void'
+
     odin_type = PRIMITIVE_TYPES[node_type.without_ptr] || node_type.without_ptr
     odin_type = "^#{odin_type}" if node_type.ptr?
     odin_type

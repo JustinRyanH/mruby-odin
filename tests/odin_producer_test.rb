@@ -17,6 +17,7 @@ class TestOdinProducor < Minitest::Test
         field_a: c.int,
         field_b: bool,
         field_c: ^f32,
+        field_d: rawptr,
       }
     EXP
 
@@ -33,7 +34,7 @@ class TestOdinProducor < Minitest::Test
     out = producer.to_s
 
     expected = <<~EXP
-      package mrby
+      package mruby
 
       when ODIN_OS == .Darwin {
         foreign import lib "libs/macos/libmruby.a"
@@ -44,6 +45,7 @@ class TestOdinProducor < Minitest::Test
         field_a: c.int,
         field_b: bool,
         field_c: ^f32,
+        field_d: rawptr,
       }
 
     EXP
