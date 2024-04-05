@@ -83,6 +83,10 @@ class TypeDef
     as_str.include? '*'
   end
 
+  def without_ptr
+    as_str.sub('*', '').strip
+  end
+
   private
 
   attr_reader :type_def

@@ -50,5 +50,9 @@ class TestAstDumpParser < Minitest::Test
     refute field_a.type.ptr?
     refute field_b.type.ptr?
     assert field_c.type.ptr?
+
+    assert_equal field_a.type.without_ptr, 'int'
+    assert_equal field_b.type.without_ptr, '_Bool'
+    assert_equal field_c.type.without_ptr, 'float'
   end
 end
