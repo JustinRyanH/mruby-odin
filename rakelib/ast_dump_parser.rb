@@ -80,7 +80,7 @@ class TypeDef
   end
 
   def ptr?
-    false
+    as_str.include? '*'
   end
 
   private

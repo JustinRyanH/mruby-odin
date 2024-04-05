@@ -49,5 +49,6 @@ class TestAstDumpParser < Minitest::Test
 
     refute field_a.type.ptr?
     refute field_b.type.ptr?
+    assert field_c.type.ptr?
   end
 end
