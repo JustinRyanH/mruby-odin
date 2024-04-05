@@ -10,7 +10,7 @@ class TestOdinProducor < Minitest::Test
     parser.parse!
 
     struct_node = parser.find_struct('test_struct')
-    out = OdinProducter.output_struct(struct_node)
+    out = OdinStruct.new(struct_node).to_s
 
     expected = <<~EXP
       test_struct :: struct {

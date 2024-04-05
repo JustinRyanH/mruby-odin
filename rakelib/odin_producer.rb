@@ -5,7 +5,7 @@ require 'erb'
 PRIMITIVE_TYPES = {
   'int' => 'c.int',
   'bool' => 'bool',
-  '_Boool' => 'bool',
+  '_Bool' => 'bool',
   'char' => 'u8',
   'int8_t' => 'i8',
   'uint8_t' => 'u8',
@@ -43,9 +43,10 @@ PRIMITIVE_DEFAULTS = {
 StructField = Struct.new(:name, :type)
 
 class OdinStruct
-  def initialize(name:, fields: [])
-    @struct_name = name
-    @fields = fields
+  def initialize(struct_def)
+    @struct_def = struct_def
+    @struct_name = struct_def.name
+    @fields = struct_def.fields.map { |f| convert_field(f) }
   end
 
   def to_s
@@ -53,17 +54,13 @@ class OdinStruct
     template = ERB.new(template_file, trim_mode: '-')
     template.result(binding)
   end
-end
 
-class OdinProducter
-  def self.output_struct(_node)
-    struct_fields = [
-      StructField.new('field_a', 'c.int'),
-      StructField.new('field_b', 'bool'),
-      StructField.new('field_c', '^f32'),
-    ]
-    test_struct = OdinStruct.new(name: 'test_struct', fields: struct_fields)
+  private
 
-    test_struct.to_s
+  def convert_field(field)
+    type = field.type
+    odin_type = PRIMITIVE_TYPES[type.without_ptr] || type.without_ptr
+    odin_type = "^#{odin_type}" if type.ptr?
+    StructField.new(field.name, odin_type)
   end
 end
