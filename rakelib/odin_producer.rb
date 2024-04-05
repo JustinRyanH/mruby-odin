@@ -19,7 +19,7 @@ PRIMITIVE_TYPES = {
   'double' => 'f64',
   'uintptr_t' => 'u64',
   'intptr_t' => 'i64',
-  'size_t' => 'u64'
+  'size_t' => 'u64',
 }.freeze
 
 PRIMITIVE_DEFAULTS = {
@@ -37,7 +37,7 @@ PRIMITIVE_DEFAULTS = {
   'double' => '0.0',
   'uintptr_t' => '0',
   'intptr_t' => '0',
-  'size_t' => '0'
+  'size_t' => '0',
 }.freeze
 
 StructField = Struct.new(:name, :type)
@@ -59,7 +59,8 @@ class OdinProducter
   def self.output_struct(_node)
     struct_fields = [
       StructField.new('field_a', 'c.int'),
-      StructField.new('field_b', 'bool')
+      StructField.new('field_b', 'bool'),
+      StructField.new('field_c', '^f32'),
     ]
     test_struct = OdinStruct.new(name: 'test_struct', fields: struct_fields)
 

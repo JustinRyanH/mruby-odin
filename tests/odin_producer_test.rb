@@ -16,6 +16,7 @@ class TestOdinProducor < Minitest::Test
       test_struct :: struct {
         field_a: c.int,
         field_b: bool,
+        field_c: ^f32,
       }
     EXP
 
