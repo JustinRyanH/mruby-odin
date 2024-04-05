@@ -52,12 +52,16 @@ class OdinField
   end
 
   def type
-    @type ||= begin
-      node_type = node.type
-      odin_type = PRIMITIVE_TYPES[node_type.without_ptr] || node_type.without_ptr
-      odin_type = "^#{odin_type}" if node_type.ptr?
-      odin_type
-    end
+    @type ||= build_type
+  end
+
+  private
+
+  def build_type
+    node_type = node.type
+    odin_type = PRIMITIVE_TYPES[node_type.without_ptr] || node_type.without_ptr
+    odin_type = "^#{odin_type}" if node_type.ptr?
+    odin_type
   end
 end
 
