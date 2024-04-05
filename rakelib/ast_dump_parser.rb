@@ -79,6 +79,10 @@ class TypeDef
     as_str
   end
 
+  def ptr?
+    false
+  end
+
   private
 
   attr_reader :type_def
