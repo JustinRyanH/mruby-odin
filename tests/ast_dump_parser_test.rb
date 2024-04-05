@@ -34,9 +34,17 @@ class TestAstDumpParser < Minitest::Test
 
     struct_node = parser.find_struct('test_struct')
 
+    field_a = struct_node['field_a']
+    field_b = struct_node['field_b']
+    field_c = struct_node['field_c']
+
     refute_nil struct_node
-    refute_nil struct_node['field_a']
-    refute_nil struct_node['field_b']
-    refute_nil struct_node['field_c']
+    refute_nil field_a
+    refute_nil field_b
+    refute_nil field_c
+
+    assert_equal field_a.type.to_s, 'int'
+    assert_equal field_b.type.to_s, '_Bool'
+    assert_equal field_c.type.to_s, 'float *'
   end
 end
