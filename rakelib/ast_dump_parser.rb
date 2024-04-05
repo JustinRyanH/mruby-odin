@@ -117,7 +117,9 @@ class StructFieldDef
   end
 
   def name
-    @name ||= definition['name']
+    @name ||= definition['name'].tap do |n|
+      raise 'Names are required for StructField' if n.nil?
+    end
   end
 
   def kind
@@ -290,7 +292,7 @@ class FuncDef < BaseDef
       id:,
       name:,
       kind:,
-      params: "[#{params.map(&:to_s).join(', ')}]"
+      params: "[#{params.map(&:to_s).join(', ')}]",
     }.to_s
   end
 
@@ -368,7 +370,7 @@ class GlobalTypeDef < BaseDef
       name:,
       content_type:,
       is_referenced: referenced?,
-      owner: owner.to_s
+      owner: owner.to_s,
     }.to_s
   end
 
