@@ -40,13 +40,34 @@ PRIMITIVE_DEFAULTS = {
   'size_t' => '0',
 }.freeze
 
+class OdinField
+  attr_reader :node
+
+  def initialize(node)
+    @node = node
+  end
+
+  def name
+    @name ||= node.name
+  end
+
+  def type
+    @type ||= begin
+      node_type = node.type
+      odin_type = PRIMITIVE_TYPES[node_type.without_ptr] || node_type.without_ptr
+      odin_type = "^#{odin_type}" if node_type.ptr?
+      odin_type
+    end
+  end
+end
+
 StructField = Struct.new(:name, :type)
 
 class OdinStruct
   def initialize(struct_def)
     @struct_def = struct_def
     @struct_name = struct_def.name
-    @fields = struct_def.fields.map { |f| convert_field(f) }
+    @fields = struct_def.fields.map { |f| OdinField.new(f) }
   end
 
   def to_s
