@@ -428,6 +428,10 @@ class AstDumpParser
     attach_types
     cleanup_external_tokens
     cleanup_duplicates
+
+    @name_to_node = api_nodes.each_with_object({}) do |node, obj|
+      obj[node.name] = node
+    end
   end
 
   def find_struct(name)
@@ -490,6 +494,7 @@ class AstDumpParser
 
   def cleanup_duplicates
     duplicates = duplicate_api_nodes
+
     duplicates.each_value do |nodes|
       nodes.select(&:global_typedef?).each { |node| remove_node(node) }
       nodes.reject!(&:global_typedef?)
@@ -533,12 +538,13 @@ class AstDumpParser
       api_nodes.each do |ast|
         duplicates[ast.name] ||= []
         duplicates[ast.name] << ast
-        duplicates.select! { |_, v| v.size > 1 }
       end
+
+      duplicates.each_key { |key| duplicates.delete(key) if duplicates[key].size <= 1 }
     end
   end
 
   def api_nodes
-    @api_nodes ||= @ordered_ast.select { |ast| ast.name.include?('mrb') }
+    @ordered_ast.select { |ast| ast.name.include?('mrb') }
   end
 end
