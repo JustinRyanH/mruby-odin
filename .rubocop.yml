@@ -27,3 +27,9 @@ Metrics/PerceivedComplexity:
 
 Metrics/ClassLength:
   Max: 1000
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
