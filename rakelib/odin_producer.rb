@@ -85,3 +85,24 @@ class OdinStruct
     StructField.new(field.name, odin_type)
   end
 end
+
+class OdinProducter
+  attr_reader :ast
+
+  def initialize(ast)
+    @ast = ast
+  end
+
+  def setup!
+    @structs = ast.ordered_ast
+                  .select { |a| a.kind == :struct }
+                  .map { |a| OdinStruct.new(a) }
+    self
+  end
+
+  def to_s
+    template_file = IO.read('rakelib/file.odin.erb')
+    template = ERB.new(template_file, trim_mode: '-')
+    template.result(binding)
+  end
+end

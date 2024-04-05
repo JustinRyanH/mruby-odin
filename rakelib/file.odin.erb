@@ -1,0 +1,9 @@
+package mrby
+
+when ODIN_OS == .Darwin {
+  foreign import lib "libs/macos/libmruby.a"
+}
+
+<% @structs.each do |struct| %>
+<%= struct %>
+<% end -%>
