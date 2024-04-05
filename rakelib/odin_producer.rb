@@ -40,7 +40,7 @@ PRIMITIVE_DEFAULTS = {
   'size_t' => '0',
 }.freeze
 
-IDENTIFIER_TO_REMOVE = %w[const struct]
+IDENTIFIER_TO_REMOVE = %w[const struct enum]
 
 class OdinField
   attr_reader :node
@@ -78,6 +78,8 @@ end
 StructField = Struct.new(:name, :type)
 
 class OdinStruct
+  attr_reader :struct_name, :fields
+
   def initialize(struct_def)
     @struct_def = struct_def
     @struct_name = struct_def.name
@@ -85,9 +87,15 @@ class OdinStruct
   end
 
   def to_s
+    return "#{@struct_name} :: struct{}" if empty?
+
     template_file = IO.read('rakelib/struct.odin.erb')
     template = ERB.new(template_file, trim_mode: '-')
     template.result(binding)
+  end
+
+  def empty?
+    @fields.empty?
   end
 
   private
@@ -101,7 +109,7 @@ class OdinStruct
 end
 
 class OdinProducter
-  attr_reader :ast
+  attr_reader :ast, :structs
 
   def initialize(ast)
     @ast = ast

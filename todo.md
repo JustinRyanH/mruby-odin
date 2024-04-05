@@ -1,6 +1,6 @@
 # Finish Struct Gen
 
-- [ ] struct definition in type
-- [ ] void turns into rawptr
-- [ ] handle const
+- [x] struct/enum definition in type
+- [x] void turns into rawptr
+- [x] handle const
 - [ ] handle unions

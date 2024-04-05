@@ -19,6 +19,7 @@ class TestOdinProducor < Minitest::Test
         field_c: ^f32,
         field_d: rawptr,
         field_e: ^f32,
+        field_f: test_example,
       }
     EXP
 
@@ -42,12 +43,15 @@ class TestOdinProducor < Minitest::Test
       }
 
 
+      test_example :: struct{}
+
       test_struct :: struct {
         field_a: c.int,
         field_b: bool,
         field_c: ^f32,
         field_d: rawptr,
         field_e: ^f32,
+        field_f: test_example,
       }
 
     EXP

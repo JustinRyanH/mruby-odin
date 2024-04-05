@@ -598,7 +598,8 @@ class AstDumpParser
   end
 
   def file_in_accepted_path(location)
-    return false if location.empty?
+    return true if location.empty?
+    return true if location.file.empty?
 
     @file_search_paths.any? { |p| location.file.include?(p) }
   end
