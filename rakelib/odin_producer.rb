@@ -57,6 +57,10 @@ class OdinField
     @type ||= build_type
   end
 
+  def problems?
+    false
+  end
+
   private
 
   def build_type
@@ -101,7 +105,7 @@ class OdinStruct
   end
 
   def problems?
-    false
+    @fields.any?(&:problems?)
   end
 
   private
