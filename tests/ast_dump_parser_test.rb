@@ -4,12 +4,12 @@ require 'rakelib/ast_dump_parser'
 
 class TestAstDumpParser < Minitest::Test
   def test_with_a_perfect_square
-    refute_nil ::AstDumpParser.from_clang_dump('{}')
+    refute_nil ::AstDumpParser.from_clang_dump('{}', file: 'bad.c')
   end
 
   def test_global_types
     file = File.open('tests/main_c_dump.json')
-    parser = ::AstDumpParser.from_clang_dump(file.read)
+    parser = ::AstDumpParser.from_clang_dump(file.read, file: 'c/mruby.c')
 
     parser.parse!
 
@@ -18,7 +18,7 @@ class TestAstDumpParser < Minitest::Test
 
   def test_mrb_state
     file = File.open('tests/main_c_dump.json')
-    parser = ::AstDumpParser.from_clang_dump(file.read)
+    parser = ::AstDumpParser.from_clang_dump(file.read, file: 'c/mruby.c')
 
     parser.parse!
     struct = parser.find_struct('mrb_state')
@@ -29,7 +29,8 @@ class TestAstDumpParser < Minitest::Test
 
   def test_basic_struct
     struct_example = IO.read('tests/struct_example.json')
-    parser = AstDumpParser.from_clang_dump(struct_example, api_id: 'test', file_search_paths: ['tests'])
+    parser = AstDumpParser.from_clang_dump(struct_example, file: 'tests/struct_example.c', api_id: 'test',
+                                                           file_search_paths: ['tests'])
     parser.parse!
 
     struct_node = parser.find_struct('test_struct')

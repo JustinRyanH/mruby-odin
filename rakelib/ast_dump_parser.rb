@@ -449,14 +449,15 @@ class GlobalTypeDef < BaseDef
 end
 
 class AstDumpParser
-  attr_reader :ast_hash, :kind_map, :token_map, :ordered_ast, :name_to_node
+  attr_reader :ast_hash, :kind_map, :token_map, :ordered_ast, :name_to_node, :file
 
   # @param [String] dump - the raw output from `clang -ast-dump=json`
-  def self.from_clang_dump(dump, api_id: 'mrb', file_search_paths: ['ruby'])
-    new(JSON.parse(dump), api_id:, file_search_paths:)
+  def self.from_clang_dump(dump, file:, api_id: 'mrb', file_search_paths: ['ruby'])
+    new(JSON.parse(dump), file:, api_id:, file_search_paths:)
   end
 
-  def initialize(ast_hash, api_id: 'mrb', file_search_paths: ['ruby'])
+  def initialize(ast_hash, file:, api_id: 'mrb', file_search_paths: ['ruby'])
+    @file = file
     @ast_hash = ast_hash
     @file_search_paths = file_search_paths
     @api_id = api_id
@@ -564,9 +565,10 @@ class AstDumpParser
         else
           nodes.select { |n| n.fields.empty? }.each { |n| remove_node(n) }
         end
-
+      when :func
+        # TODO: Handle func duplicates
       else
-        raise "#{note_type} has not been handled for duplicate handling"
+        raise "#{node_type} has not been handled for duplicate handling"
       end
     end
   end

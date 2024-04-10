@@ -6,7 +6,8 @@ require 'rakelib/odin_producer'
 class TestOdinProducor < Minitest::Test
   def test_output_struct
     struct_example = IO.read('tests/struct_example.json')
-    parser = AstDumpParser.from_clang_dump(struct_example, api_id: 'test', file_search_paths: ['tests'])
+    parser = AstDumpParser.from_clang_dump(struct_example, file: 'c/mruby.c', api_id: 'test',
+                                                           file_search_paths: ['tests'])
     parser.parse!
 
     struct_node = parser.find_struct('test_struct')
@@ -28,7 +29,8 @@ class TestOdinProducor < Minitest::Test
 
   def test_struct_prompt
     struct_example = IO.read('tests/struct_example.json')
-    parser = AstDumpParser.from_clang_dump(struct_example, api_id: 'test', file_search_paths: ['tests'])
+    parser = AstDumpParser.from_clang_dump(struct_example, file: 'tests/struct_example.c', api_id: 'test',
+                                                           file_search_paths: ['tests'])
     parser.parse!
 
     test_input = StringIO.new
@@ -54,7 +56,8 @@ class TestOdinProducor < Minitest::Test
   def test_odin_file
     skip('until we handle problems, and is able to cache solutions')
     struct_example = IO.read('tests/struct_example.json')
-    parser = AstDumpParser.from_clang_dump(struct_example, api_id: 'test', file_search_paths: ['tests'])
+    parser = AstDumpParser.from_clang_dump(struct_example, file: 'tests/struct_example.c', api_id: 'test',
+                                                           file_search_paths: ['tests'])
     parser.parse!
 
     producer = OdinProducter.new(parser)
