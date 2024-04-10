@@ -473,14 +473,21 @@ class AstDumpParser
   end
 
   def parse!
-    @ast_hash['inner'].each { |d| parse(d) }
+    @ast_hash['inner']
+      .map { |d| parse(d) }
+      .compact
+      .each do |node|
+      @token_map[node.id] = node
+      add_to_kind_hash(node)
+      @ordered_ast << node
+    end
 
     attach_types
     cleanup_external_tokens
     cleanup_duplicates
 
     @name_to_node = @ordered_ast
-                    .reject { |name| name.nil? }
+                    .reject(&:nil?)
                     .each_with_object({}) do |node, obj|
       obj[node.name] = node
     end
@@ -498,29 +505,13 @@ class AstDumpParser
   def parse(decl)
     case decl['kind']
     when 'RecordDecl'
-      StructDef.new(decl).tap do |s|
-        @token_map[s.id] = s
-        add_to_kind_hash(s)
-        @ordered_ast << s
-      end
+      StructDef.new(decl)
     when 'EnumDecl'
-      EnumDef.new(decl).tap do |e|
-        @token_map[e.id] = e
-        add_to_kind_hash(e)
-        @ordered_ast << e
-      end
+      EnumDef.new(decl)
     when 'FunctionDecl'
-      FuncDef.new(decl).tap do |f|
-        @token_map[f.id] = f
-        add_to_kind_hash(f)
-        @ordered_ast << f
-      end
+      FuncDef.new(decl)
     when 'TypedefDecl'
-      GlobalTypeDef.new(decl).tap do |g|
-        @token_map[g.id] = g
-        add_to_kind_hash(g)
-        @ordered_ast << g
-      end
+      GlobalTypeDef.new(decl)
     when 'VarDecl', 'StaticAssertDecl'
       # I don't forsee myself needing this decl
       nil
