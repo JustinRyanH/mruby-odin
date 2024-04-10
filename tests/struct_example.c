@@ -17,6 +17,6 @@ typedef struct byte_struct {
   char *byte; // This is a pointer to a single byte
 } byte_struct;
 
-typedef struct bytess_struct {
+typedef struct bytes_struct {
   char *bytes; // This is an array of bytes
 } bytes_struct;

@@ -58,13 +58,18 @@ class OdinField
   end
 
   def problems?
+    char_pointer?
+  end
+
+  def char_pointer?
+    return true if node_type.without_ptr == 'char' and node_type.ptr?
+
     false
   end
 
   private
 
   def build_type
-    node_type = node.type
     return 'rawptr' if node_type.ptr? && node_type.without_ptr == 'void'
 
     cleaned_type = clear_c_specific_references(node_type.without_ptr)
@@ -76,6 +81,10 @@ class OdinField
   def clear_c_specific_references(type)
     IDENTIFIER_TO_REMOVE.each { |itr| type = type.gsub(itr, '') }
     type.strip
+  end
+
+  def node_type
+    @node_type ||= node.type
   end
 end
 

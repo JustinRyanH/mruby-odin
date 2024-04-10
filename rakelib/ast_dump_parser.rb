@@ -473,7 +473,9 @@ class AstDumpParser
     cleanup_external_tokens
     cleanup_duplicates
 
-    @name_to_node = api_nodes.each_with_object({}) do |node, obj|
+    @name_to_node = @ordered_ast
+                    .reject { |name| name.nil? }
+                    .each_with_object({}) do |node, obj|
       obj[node.name] = node
     end
 
@@ -582,7 +584,7 @@ class AstDumpParser
 
   def duplicate_api_nodes
     @duplicate_api_nodes ||= {}.tap do |duplicates|
-      api_nodes.each do |ast|
+      @ordered_ast.each do |ast|
         duplicates[ast.name] ||= []
         duplicates[ast.name] << ast
       end
