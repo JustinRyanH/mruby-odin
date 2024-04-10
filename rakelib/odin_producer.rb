@@ -78,12 +78,14 @@ end
 StructField = Struct.new(:name, :type)
 
 class OdinStruct
-  attr_reader :struct_name, :fields
+  attr_reader :struct_name, :fields, :output, :input
 
-  def initialize(struct_def)
+  def initialize(struct_def, output: $stdout, input: $stdin)
     @struct_def = struct_def
     @struct_name = struct_def.name
     @fields = struct_def.fields.map { |f| OdinField.new(f) }
+    @output = output
+    @input = input
   end
 
   def to_s
@@ -98,6 +100,10 @@ class OdinStruct
     @fields.empty?
   end
 
+  def problems?
+    false
+  end
+
   private
 
   def convert_field(field)
@@ -109,16 +115,18 @@ class OdinStruct
 end
 
 class OdinProducter
-  attr_reader :ast, :structs
+  attr_reader :ast, :structs, :output, :input
 
-  def initialize(ast)
+  def initialize(ast, output: $stdout, input: $stdin)
     @ast = ast
+    @input = input
+    @output = output
   end
 
   def setup!
     @structs = ast.ordered_ast
                   .select { |a| a.kind == :struct }
-                  .map { |a| OdinStruct.new(a) }
+                  .map { |a| OdinStruct.new(a, output:, input:) }
     self
   end
 

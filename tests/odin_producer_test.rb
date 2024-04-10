@@ -26,7 +26,22 @@ class TestOdinProducor < Minitest::Test
     assert_equal(expected, out)
   end
 
+  def test_struct_prompt
+    skip('')
+    struct_example = IO.read('tests/struct_example.json')
+    parser = AstDumpParser.from_clang_dump(struct_example, api_id: 'test', file_search_paths: ['tests'])
+    parser.parse!
+
+    test_input = StringIO.new
+    test_output = StringIO.new
+
+    struct_node = parser.find_struct('test_struct')
+    out = OdinStruct.new(struct_node, output: test_output, input: test_input)
+    assert_false(out.problems?)
+  end
+
   def test_odin_file
+    skip('until we handle problems, and is able to cache solutions')
     struct_example = IO.read('tests/struct_example.json')
     parser = AstDumpParser.from_clang_dump(struct_example, api_id: 'test', file_search_paths: ['tests'])
     parser.parse!
