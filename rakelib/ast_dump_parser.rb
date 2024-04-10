@@ -4,14 +4,15 @@ require 'json'
 
 class AstLocation
   attr_reader :loc, :range
+  attr_writer :file
 
   def initialize(location, range: {})
     @loc = location
     @range = range
   end
 
-  def line
-    @line ||= loc['line']
+  def start_line
+    @start_line ||= loc['line']
   end
 
   def end_line
@@ -31,7 +32,7 @@ class AstLocation
   end
 
   def to_s
-    { start_line: line, end_line:, file: }.to_s
+    { start_line:, end_line:, file: }.to_s
   end
 
   private
@@ -477,6 +478,8 @@ class AstDumpParser
       .map { |d| parse(d) }
       .compact
       .each do |node|
+      is_likely_local_file = node.location.file == '' and !node.location.start_line.nil?
+      node.location.file = file if is_likely_local_file
       @token_map[node.id] = node
       add_to_kind_hash(node)
       @ordered_ast << node

@@ -6,7 +6,7 @@ require 'rakelib/odin_producer'
 class TestOdinProducor < Minitest::Test
   def test_output_struct
     struct_example = IO.read('tests/struct_example.json')
-    parser = AstDumpParser.from_clang_dump(struct_example, file: 'c/mruby.c', api_id: 'test',
+    parser = AstDumpParser.from_clang_dump(struct_example, file: 'tests/struct_example.c', api_id: 'test',
                                                            file_search_paths: ['tests'])
     parser.parse!
 
