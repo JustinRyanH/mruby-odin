@@ -3,14 +3,19 @@
 require 'json'
 
 class AstLocation
-  attr_reader :loc
+  attr_reader :loc, :range
 
-  def initialize(location)
+  def initialize(location, range: {})
     @loc = location
+    @range = range
   end
 
   def line
     @line ||= loc['line']
+  end
+
+  def end_line
+    @end_line ||= range.dig('end', 'line') || nil
   end
 
   def column
@@ -26,7 +31,7 @@ class AstLocation
   end
 
   def to_s
-    { line:, column:, file: }.to_s
+    { start_line: line, end_line:, file: }.to_s
   end
 
   private
@@ -50,7 +55,7 @@ class BaseDef
   end
 
   def location
-    @location ||= AstLocation.new(definition['loc'])
+    @location ||= AstLocation.new(definition['loc'], range: definition['range'])
   end
 
   def struct?
